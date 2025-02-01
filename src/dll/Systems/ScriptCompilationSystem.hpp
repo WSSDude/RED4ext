@@ -13,7 +13,7 @@ struct FixedWString
     const wchar_t* str;
 };
 
-class ScriptCompilationSystem : public ISystem
+class ScriptCompilationSystem final : public ISystem
 {
     using Map_t = std::unordered_multimap<std::shared_ptr<PluginBase>, std::filesystem::path>;
     using MapIter_t = Map_t::iterator;

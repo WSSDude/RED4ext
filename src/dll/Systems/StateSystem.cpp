@@ -1,6 +1,6 @@
 #include "stdafx.hpp"
+
 #include "StateSystem.hpp"
-#include "Utils.hpp"
 
 ESystemType StateSystem::GetType()
 {
@@ -13,136 +13,167 @@ void StateSystem::Startup()
 
 void StateSystem::Shutdown()
 {
-    spdlog::trace("Removing all game states...");
+    spdlog::trace("Removing all game state hooks...");
 
-    m_baseInitialization.onEnter.clear();
-    m_baseInitialization.onUpdate.clear();
-    m_baseInitialization.onExit.clear();
+    m_baseInitialization.Shutdown();
+    m_initialization.Shutdown();
+    m_running.Shutdown();
+    m_shutdown.Shutdown();
 
-    m_initialization.onEnter.clear();
-    m_initialization.onUpdate.clear();
-    m_initialization.onExit.clear();
-
-    m_running.onEnter.clear();
-    m_running.onUpdate.clear();
-    m_running.onExit.clear();
-
-    m_shutdown.onEnter.clear();
-    m_shutdown.onUpdate.clear();
-    m_shutdown.onExit.clear();
-
-    spdlog::trace("All game states were removed successfully");
+    spdlog::trace("All game state hooks were removed successfully");
 }
 
-bool StateSystem::Add(std::shared_ptr<PluginBase> aPlugin, RED4ext::EGameStateType aStateType, Func_t aOnEnter,
-                      Func_t aOnUpdate, Func_t aOnExit)
+bool StateSystem::AddHook(std::shared_ptr<PluginBase> aPlugin, RED4ext::EGameStateType aStateType,
+                          RED4ext::GameState* aState)
 {
+    assert(aState);
+
     State* state = GetStateByType(aStateType);
-    if (state)
+    if (!state)
     {
-        if (aOnEnter)
-        {
-            state->onEnter.emplace_back(aPlugin, aOnEnter);
-        }
-
-        if (aOnUpdate)
-        {
-            state->onUpdate.emplace_back(aPlugin, aOnUpdate);
-        }
-
-        if (aOnExit)
-        {
-            state->onExit.emplace_back(aPlugin, aOnExit);
-        }
+        spdlog::warn(L"The request to add a game state hook for '{}' has failed", aPlugin->GetName());
+        return false;
     }
 
-    return state;
-}
-
-bool StateSystem::OnEnter(RED4ext::EGameStateType aStateType, RED4ext::CGameApplication* aApp)
-{
-    State* state = GetStateByType(aStateType);
-    if (state)
+    if (aState->OnBeforeEnter)
     {
-        auto action = fmt::format(L"{}::OnEnter", Utils::GetStateName(aStateType));
-        return Run(action, state->onEnter, aApp);
+        state->onEnter.onBefore.emplace_back(aPlugin, aState->OnBeforeEnter);
     }
 
+    if (aState->OnAfterEnter)
+    {
+        state->onEnter.onAfter.emplace_back(aPlugin, aState->OnAfterEnter);
+    }
+
+    if (aState->OnBeforeTick)
+    {
+        state->onTick.onBefore.emplace_back(aPlugin, aState->OnBeforeTick);
+    }
+
+    if (aState->OnAfterTick)
+    {
+        state->onTick.onAfter.emplace_back(aPlugin, aState->OnAfterTick);
+    }
+
+    if (aState->OnBeforeExit)
+    {
+        state->onExit.onBefore.emplace_back(aPlugin, aState->OnBeforeExit);
+    }
+
+    if (aState->OnAfterExit)
+    {
+        state->onExit.onAfter.emplace_back(aPlugin, aState->OnAfterExit);
+    }
+
+    spdlog::trace(L"The request to add a '{}' state hook for '{}' has been successfully completed", state->GetName(),
+                  aPlugin->GetName());
     return true;
 }
 
-bool StateSystem::OnUpdate(RED4ext::EGameStateType aStateType, RED4ext::CGameApplication* aApp)
+std::wstring_view StateSystem::StateAction::GetName() const
 {
-    State* state = GetStateByType(aStateType);
-    if (state)
-    {
-        auto action = fmt::format(L"{}::OnUpdate", Utils::GetStateName(aStateType));
-        return Run(action, state->onUpdate, aApp);
-    }
-
-    return true;
+    return name;
 }
 
-bool StateSystem::OnExit(RED4ext::EGameStateType aStateType, RED4ext::CGameApplication* aApp)
+void StateSystem::StateAction::Shutdown()
 {
-    State* state = GetStateByType(aStateType);
-    if (state)
-    {
-        auto action = fmt::format(L"{}::OnExit", Utils::GetStateName(aStateType));
-        return Run(action, state->onExit, aApp);
-    }
-
-    return true;
+    onBefore.clear();
+    onAfter.clear();
 }
 
-StateSystem::State* StateSystem::GetStateByType(RED4ext::EGameStateType aStateType)
+std::wstring_view StateSystem::State::GetName() const
 {
-    using enum RED4ext::EGameStateType;
-    switch (aStateType)
+    return name;
+}
+
+void StateSystem::State::Shutdown()
+{
+    onEnter.Shutdown();
+    onTick.Shutdown();
+    onExit.Shutdown();
+}
+
+StateSystem::State* StateSystem::GetStateByType(RED4ext::EGameStateType aType)
+{
+    switch (aType)
     {
-    case BaseInitialization:
+    case RED4ext::EGameStateType::BaseInitialization:
     {
         return &m_baseInitialization;
     }
-    case Initialization:
+    case RED4ext::EGameStateType::Initialization:
     {
         return &m_initialization;
     }
-    case Running:
+    case RED4ext::EGameStateType::Running:
     {
         return &m_running;
     }
-    case Shutdown:
+    case RED4ext::EGameStateType::Shutdown:
     {
         return &m_shutdown;
     }
     default:
     {
-        spdlog::warn("State with type {} is not handled", static_cast<int32_t>(aStateType));
-        break;
+        spdlog::warn("State with type {} is not handled",
+                     static_cast<std::underlying_type_t<RED4ext::EGameStateType>>(aType));
+        return nullptr;
     }
     }
-
-    return nullptr;
 }
 
-bool StateSystem::Run(std::wstring_view aAction, std::list<StateItem>& aList, RED4ext::CGameApplication* aApp)
+std::pair<StateSystem::State*, StateSystem::StateAction*> StateSystem::GetStateAndActionByTypes(
+    const RED4ext::EGameStateType aType, const StateSystemAction aAction)
 {
-    bool result = true;
+    static const auto getStateAction = [](auto* aState, const auto aType) -> StateAction*
+    {
+        switch (aType)
+        {
+        case StateSystemAction::Enter:
+        {
+            return &aState->onEnter;
+        }
+        case StateSystemAction::Tick:
+        {
+            return &aState->onTick;
+        }
+        case StateSystemAction::Exit:
+        {
+            return &aState->onExit;
+        }
+        default:
+        {
+            spdlog::warn("StateAction with type {} is not handled",
+                         static_cast<std::underlying_type_t<StateSystemAction>>(aType));
+            return nullptr;
+        }
+        }
+    };
+
+    if (auto* state = GetStateByType(aType))
+    {
+        return {state, getStateAction(state, aAction)};
+    }
+
+    return {nullptr, nullptr};
+}
+
+void StateSystem::Run(std::wstring_view aAction, std::vector<StateItem>& aList, RED4ext::CGameApplication* aApp)
+{
     for (auto it = aList.begin(); it != aList.end();)
     {
-        auto pluginName = it->plugin->GetName();
+        const std::wstring_view pluginName = it->plugin ? it->plugin->GetName() : L"RED4ext";
 
         try
         {
             if (it->func(aApp))
             {
+                spdlog::trace(L"Finished running '{}' registered by '{}'", aAction, pluginName);
                 it = aList.erase(it);
             }
             else
             {
                 ++it;
-                result = false;
             }
         }
         catch (const std::exception& e)
@@ -155,6 +186,4 @@ bool StateSystem::Run(std::wstring_view aAction, std::list<StateItem>& aList, RE
             spdlog::warn(L"An unknown exception occured while executing '{}' registered by '{}'", aAction, pluginName);
         }
     }
-
-    return result;
 }

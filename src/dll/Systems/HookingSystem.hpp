@@ -4,7 +4,7 @@
 #include "ISystem.hpp"
 #include "PluginBase.hpp"
 
-class HookingSystem : public ISystem
+class HookingSystem final : public ISystem
 {
 public:
     ESystemType GetType() final;

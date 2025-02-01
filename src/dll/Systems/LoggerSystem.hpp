@@ -6,7 +6,7 @@
 #include "PluginBase.hpp"
 #include "Utils.hpp"
 
-class LoggerSystem : public ISystem
+class LoggerSystem final : public ISystem
 {
 public:
     LoggerSystem(const Paths& aPaths, const Config& aConfig, const DevConsole& aDevConsole);

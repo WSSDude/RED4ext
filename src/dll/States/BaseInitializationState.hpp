@@ -3,7 +3,7 @@
 namespace States::BaseInitializationState
 {
 bool OnEnter(RED4ext::CBaseInitializationState* aThis, RED4ext::CGameApplication* aApp);
-bool OnUpdate(RED4ext::CBaseInitializationState* aThis, RED4ext::CGameApplication* aApp);
+bool OnTick(RED4ext::CBaseInitializationState* aThis, RED4ext::CGameApplication* aApp);
 bool OnExit(RED4ext::CBaseInitializationState* aThis, RED4ext::CGameApplication* aApp);
 
 bool Attach(RED4ext::CBaseInitializationState* aState);

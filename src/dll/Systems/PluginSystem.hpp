@@ -5,7 +5,7 @@
 #include "Paths.hpp"
 #include "PluginBase.hpp"
 
-class PluginSystem : public ISystem
+class PluginSystem final : public ISystem
 {
 public:
     using PluginName = std::wstring;
@@ -34,6 +34,8 @@ private:
 
     void Load(const std::filesystem::path& aPath, bool aUseAlteredSearchPath);
     MapIter_t Unload(std::shared_ptr<PluginBase> aPlugin);
+
+    void EnteredRunningState() const;
 
     std::shared_ptr<PluginBase> CreatePlugin(const std::filesystem::path& aPath, wil::unique_hmodule aModule) const;
 

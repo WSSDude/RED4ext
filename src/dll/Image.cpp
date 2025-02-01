@@ -3,8 +3,8 @@
 
 Image::Image()
     : m_isCyberpunk(false)
-    , m_fileVersion(RED4EXT_V0_FILEVER(0, 0, 0, 0))
-    , m_productVersion(RED4EXT_V0_SEMVER(0, 0, 0))
+    , m_fileVersion(RED4EXT_FILEVER(0, 0, 0, 0))
+    , m_productVersion(RED4EXT_SEMVER(0, 0, 0))
 {
     std::wstring fileName;
     auto hr = wil::GetModuleFileNameW(nullptr, fileName);

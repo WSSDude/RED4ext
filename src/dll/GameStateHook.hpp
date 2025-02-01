@@ -12,10 +12,10 @@ public:
 
     static_assert(std::is_base_of_v<RED4ext::IGameState, T>, "T should inherit IGameState");
 
-    GameStateHook(Func_t aOnEnter, Func_t aOnUpdate, Func_t aOnExit)
+    GameStateHook(Func_t aOnEnter, Func_t aOnTick, Func_t aOnExit)
         : m_isAttached(false)
         , m_onEnter(aOnEnter)
-        , m_onUpdate(aOnUpdate)
+        , m_onTick(aOnTick)
         , m_onExit(aOnExit)
     {
     }
@@ -28,10 +28,10 @@ public:
         spdlog::trace("Changing virtual functions for '{}' state at {}...", name, fmt::ptr(vtbl));
 
         m_onEnter.orig = reinterpret_cast<Func_t>(vtbl[3]);
-        m_onUpdate.orig = reinterpret_cast<Func_t>(vtbl[4]);
+        m_onTick.orig = reinterpret_cast<Func_t>(vtbl[4]);
         m_onExit.orig = reinterpret_cast<Func_t>(vtbl[5]);
 
-        if (SwapVFuncs(aState, m_onEnter.detour, m_onUpdate.detour, m_onExit.detour))
+        if (SwapVFuncs(aState, m_onEnter.detour, m_onTick.detour, m_onExit.detour))
         {
             spdlog::trace("Virtual functions for '{}' state were changed successfully", name);
             return true;
@@ -47,7 +47,7 @@ public:
 
         spdlog::trace("Restoring virtual functions for '{}' state at {}...", name, vtbl);
 
-        if (SwapVFuncs(aState, m_onEnter.orig, m_onUpdate.orig, m_onExit.orig))
+        if (SwapVFuncs(aState, m_onEnter.orig, m_onTick.orig, m_onExit.orig))
         {
             spdlog::trace("Virtual functions for '{}' state were restored successfully", name);
             return true;
@@ -69,12 +69,12 @@ public:
         return true;
     }
 
-    bool OnUpdate(T* aState, RED4ext::CGameApplication* aApp)
+    bool OnTick(T* aState, RED4ext::CGameApplication* aApp)
     {
-        if (m_onUpdate.shouldExecute && m_onUpdate.orig)
+        if (m_onTick.shouldExecute && m_onTick.orig)
         {
-            auto result = m_onUpdate.orig(aState, aApp);
-            m_onUpdate.shouldExecute = !result;
+            auto result = m_onTick.orig(aState, aApp);
+            m_onTick.shouldExecute = !result;
 
             return result;
         }
@@ -110,7 +110,7 @@ private:
         Func_t orig;
     };
 
-    bool SwapVFuncs(T* aState, Func_t aOnEnter, Func_t aOnUpdate, Func_t aOnExit)
+    bool SwapVFuncs(T* aState, Func_t aOnEnter, Func_t aOnTick, Func_t aOnExit)
     {
         auto name = aState->GetName();
         auto vtbl = *reinterpret_cast<Func_t**>(aState);
@@ -131,12 +131,12 @@ private:
             *onEnter = aOnEnter;
             spdlog::trace("'OnEnter' function was changed successfully");
 
-            auto onUpdate = &vtbl[4];
-            spdlog::trace("Changing 'OnUpdate' function at {} from {} to {}...", fmt::ptr(onUpdate), fmt::ptr(vtbl[4]),
-                          fmt::ptr(aOnUpdate));
+            auto onTick = &vtbl[4];
+            spdlog::trace("Changing 'OnTick' function at {} from {} to {}...", fmt::ptr(onTick), fmt::ptr(vtbl[4]),
+                          fmt::ptr(aOnTick));
 
-            *onUpdate = aOnUpdate;
-            spdlog::trace("'OnUpdate' function was changed successfully");
+            *onTick = aOnTick;
+            spdlog::trace("'OnTick' function was changed successfully");
 
             auto onExit = &vtbl[5];
             spdlog::trace("Changing 'OnExit' function at {} from {} to {}...", fmt::ptr(onExit), fmt::ptr(vtbl[5]),
@@ -175,6 +175,6 @@ private:
 
     bool m_isAttached;
     FuncHook m_onEnter;
-    FuncHook m_onUpdate;
+    FuncHook m_onTick;
     FuncHook m_onExit;
 };

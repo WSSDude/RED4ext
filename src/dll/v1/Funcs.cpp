@@ -24,7 +24,8 @@ std::shared_ptr<PluginBase> GetPluginByHandle(RED4ext::PluginHandle aHandle)
 }
 } // namespace
 
-bool v0::Hooking::Attach(RED4ext::PluginHandle aHandle, void* aTarget, void* aDetour, void** aOriginal)
+namespace v1 {
+bool Hooking::Attach(RED4ext::PluginHandle aHandle, void* aTarget, void* aDetour, void** aOriginal)
 {
     spdlog::trace("Attach request received from plugin with handle {}", fmt::ptr(aHandle));
 
@@ -50,7 +51,7 @@ bool v0::Hooking::Attach(RED4ext::PluginHandle aHandle, void* aTarget, void* aDe
     return hookingSystem->Attach(plugin, aTarget, aDetour, aOriginal);
 }
 
-bool v0::Hooking::Detach(RED4ext::PluginHandle aHandle, void* aTarget)
+bool Hooking::Detach(RED4ext::PluginHandle aHandle, void* aTarget)
 {
     spdlog::trace("Detach request received from plugin with handle {}", fmt::ptr(aHandle));
 
@@ -76,9 +77,9 @@ bool v0::Hooking::Detach(RED4ext::PluginHandle aHandle, void* aTarget)
     return hookingSystem->Detach(plugin, aTarget);
 }
 
-bool v0::GameStates::Add(RED4ext::PluginHandle aHandle, RED4ext::EGameStateType aType, RED4ext::GameState* aState)
+bool GameStates::AddHook(RED4ext::PluginHandle aHandle, RED4ext::EGameStateType aType, RED4ext::GameState* aState)
 {
-    spdlog::trace("Request to add a game state has been received from plugin with handle {}", fmt::ptr(aHandle));
+    spdlog::trace("Request to add a game state hooke has been received from plugin with handle {}", fmt::ptr(aHandle));
 
     if (!aState)
     {
@@ -99,18 +100,10 @@ bool v0::GameStates::Add(RED4ext::PluginHandle aHandle, RED4ext::EGameStateType 
     }
 
     auto stateSystem = app->GetStateSystem();
-    if (stateSystem->Add(plugin, aType, aState->OnEnter, aState->OnUpdate, aState->OnExit))
-    {
-        spdlog::trace(L"The request to add a '{}' state for '{}' has been successfully completed",
-                      Utils::GetStateName(aType), plugin->GetName());
-        return true;
-    }
-
-    spdlog::warn(L"The request to add a '{}' state for '{}' has failed", Utils::GetStateName(aType), plugin->GetName());
-    return false;
+    return stateSystem->AddHook(plugin, aType, aState);
 }
 
-bool v0::Scripts::Add(RED4ext::PluginHandle aHandle, const wchar_t* aPath)
+bool Scripts::Add(RED4ext::PluginHandle aHandle, const wchar_t* aPath)
 {
     auto app = App::Get();
     if (!app)
@@ -127,3 +120,4 @@ bool v0::Scripts::Add(RED4ext::PluginHandle aHandle, const wchar_t* aPath)
     auto scriptCompilationSystem = app->GetScriptCompilationSystem();
     return scriptCompilationSystem->Add(plugin, aPath);
 }
+} // namespace v1
