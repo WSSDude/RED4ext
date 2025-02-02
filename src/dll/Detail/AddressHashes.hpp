@@ -17,4 +17,9 @@ constexpr std::uint32_t GsmState_SessionActive_ReportErrorCode = 2141394294UL;
 constexpr std::uint32_t IGameSystem_vtbl = 1854670959UL;
 constexpr std::uint32_t Main = 240386859UL;
 constexpr std::uint32_t ScriptValidator_Validate = 898639042UL;
+
+constexpr std::uint32_t GpuApi_InitializeDeviceData = 1809518477UL;
+constexpr std::uint32_t GpuApi_ShutdownDeviceData = 1985480926UL;
+constexpr std::uint32_t GpuApi_ResizeBackbuffer = 239671909UL;
+constexpr std::uint32_t GpuApi_Present = 2468877568UL;
 } // namespace Hashes

@@ -6,6 +6,7 @@
 #include "Systems/HookingSystem.hpp"
 #include "Systems/LoggerSystem.hpp"
 #include "Systems/PluginSystem.hpp"
+#include "Systems/RenderSystem.hpp"
 #include "Systems/ScriptCompilationSystem.hpp"
 #include "Systems/StateSystem.hpp"
 
@@ -26,6 +27,7 @@ public:
     StateSystem* GetStateSystem();
     PluginSystem* GetPluginSystem();
     ScriptCompilationSystem* GetScriptCompilationSystem();
+    RenderSystem* GetRenderSystem();
 
     const Paths* GetPaths() const;
 

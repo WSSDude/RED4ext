@@ -10,19 +10,18 @@ namespace v1
 Plugin::Plugin(const std::filesystem::path& aPath, wil::unique_hmodule aModule)
     : PluginBase(aPath, std::move(aModule))
     , m_info{}
-    , m_sdk{}
     , m_runtime(Image::Get()->GetProductVersion())
     , m_logger{}
     , m_hooking{}
     , m_gameStates{}
     , m_scripts{}
+    , m_sdk{.runtime = m_runtime,
+            .logger = m_logger,
+            .hooking = m_hooking,
+            .gameStates = m_gameStates,
+            .scripts = m_scripts,
+            .rendering = m_rendering}
 {
-    m_sdk.runtime = &m_runtime;
-    m_sdk.logger = &m_logger;
-    m_sdk.hooking = &m_hooking;
-    m_sdk.gameStates = &m_gameStates;
-    m_sdk.scripts = &m_scripts;
-
     m_logger.Trace = Logger::Trace;
     m_logger.TraceF = Logger::TraceF;
     m_logger.TraceW = Logger::TraceW;

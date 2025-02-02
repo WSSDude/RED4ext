@@ -10,5 +10,6 @@ enum class ESystemType : uint8_t
     Hooking,
     Script,
     State,
+    Render,
     Plugin
 };

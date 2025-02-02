@@ -26,7 +26,7 @@ public:
     void Startup() final;
     void Shutdown() final;
 
-    bool Add(std::shared_ptr<PluginBase> aPlugin, const wchar_t* aPath);
+    bool Add(std::shared_ptr<PluginBase> aPlugin, std::wstring_view aPath);
 
     void SetScriptsBlob(const std::filesystem::path& aPath);
     const std::filesystem::path& GetScriptsBlob() const;

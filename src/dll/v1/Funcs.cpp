@@ -11,12 +11,13 @@ std::shared_ptr<PluginBase> GetPluginByHandle(RED4ext::PluginHandle aHandle)
     {
         return nullptr;
     }
-
+    
+    const auto module = std::bit_cast<HMODULE>(aHandle);
     auto pluginSystem = app->GetPluginSystem();
-    auto plugin = pluginSystem->GetPlugin(aHandle);
+    auto plugin = pluginSystem->GetPlugin(module);
     if (!plugin)
     {
-        spdlog::warn("Could not find a plugin with handle {}", fmt::ptr(aHandle));
+        spdlog::warn("Could not find a plugin with handle {}", fmt::ptr(module));
         return nullptr;
     }
 
@@ -27,7 +28,8 @@ std::shared_ptr<PluginBase> GetPluginByHandle(RED4ext::PluginHandle aHandle)
 namespace v1 {
 bool Hooking::Attach(RED4ext::PluginHandle aHandle, void* aTarget, void* aDetour, void** aOriginal)
 {
-    spdlog::trace("Attach request received from plugin with handle {}", fmt::ptr(aHandle));
+    const auto module = std::bit_cast<HMODULE>(aHandle);
+    spdlog::trace("Attach request received from plugin with handle {}", fmt::ptr(module));
 
     if (aTarget == nullptr || aDetour == nullptr)
     {
@@ -53,7 +55,8 @@ bool Hooking::Attach(RED4ext::PluginHandle aHandle, void* aTarget, void* aDetour
 
 bool Hooking::Detach(RED4ext::PluginHandle aHandle, void* aTarget)
 {
-    spdlog::trace("Detach request received from plugin with handle {}", fmt::ptr(aHandle));
+    const auto module = std::bit_cast<HMODULE>(aHandle);
+    spdlog::trace("Detach request received from plugin with handle {}", fmt::ptr(module));
 
     if (aTarget == nullptr)
     {
@@ -77,15 +80,10 @@ bool Hooking::Detach(RED4ext::PluginHandle aHandle, void* aTarget)
     return hookingSystem->Detach(plugin, aTarget);
 }
 
-bool GameStates::AddHook(RED4ext::PluginHandle aHandle, RED4ext::EGameStateType aType, RED4ext::GameState* aState)
+bool GameStates::AddHook(RED4ext::PluginHandle aHandle, RED4ext::EGameStateType aType, const RED4ext::GameState& aState)
 {
-    spdlog::trace("Request to add a game state hooke has been received from plugin with handle {}", fmt::ptr(aHandle));
-
-    if (!aState)
-    {
-        spdlog::warn("The state's address is NULL");
-        return false;
-    }
+    const auto module = std::bit_cast<HMODULE>(aHandle);
+    spdlog::trace("Request to add a game state hook has been received from plugin with handle {}", fmt::ptr(module));
 
     auto app = App::Get();
     if (!app)
@@ -103,7 +101,7 @@ bool GameStates::AddHook(RED4ext::PluginHandle aHandle, RED4ext::EGameStateType 
     return stateSystem->AddHook(plugin, aType, aState);
 }
 
-bool Scripts::Add(RED4ext::PluginHandle aHandle, const wchar_t* aPath)
+bool Scripts::Add(RED4ext::PluginHandle aHandle, const std::wstring_view aPath)
 {
     auto app = App::Get();
     if (!app)
@@ -119,5 +117,26 @@ bool Scripts::Add(RED4ext::PluginHandle aHandle, const wchar_t* aPath)
 
     auto scriptCompilationSystem = app->GetScriptCompilationSystem();
     return scriptCompilationSystem->Add(plugin, aPath);
+}
+
+bool Rendering::AddHook(RED4ext::PluginHandle aHandle, const RED4ext::Render& aRender)
+{
+    const auto module = std::bit_cast<HMODULE>(aHandle);
+    spdlog::trace("Request to add a rendering hook has been received from plugin with handle {}", fmt::ptr(module));
+
+    auto app = App::Get();
+    if (!app)
+    {
+        return false;
+    }
+
+    auto plugin = GetPluginByHandle(aHandle);
+    if (!plugin)
+    {
+        return false;
+    }
+
+    auto renderSystem = app->GetRenderSystem();
+    return renderSystem->AddHook(plugin, aRender);
 }
 } // namespace v1

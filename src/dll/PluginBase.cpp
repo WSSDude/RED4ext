@@ -104,7 +104,7 @@ bool PluginBase::Main(RED4ext::EMainReason aReason)
     {
         try
         {
-            auto success = mainFn(module, aReason, GetSdkStruct());
+            auto success = mainFn(std::bit_cast<RED4ext::PluginHandle>(module), aReason, GetSdkStruct());
             if (!success)
             {
                 spdlog::trace(L"'Main' function returned 'false'");

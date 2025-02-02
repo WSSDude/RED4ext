@@ -4,9 +4,10 @@
 #include "Logger.hpp"
 
 #define Log(func)                                                                                                      \
+    const auto module = std::bit_cast<HMODULE>(aHandle);                                                               \
     if (!aMessage)                                                                                                     \
     {                                                                                                                  \
-        spdlog::warn("Plugin with handle {} tried to log a message with a NULL message", fmt::ptr(aHandle));           \
+        spdlog::warn("Plugin with handle {} tried to log a message with a NULL message", fmt::ptr(module));            \
         return;                                                                                                        \
     }                                                                                                                  \
                                                                                                                        \
@@ -17,7 +18,7 @@
     }                                                                                                                  \
                                                                                                                        \
     auto pluginSystem = app->GetPluginSystem();                                                                        \
-    auto plugin = pluginSystem->GetPlugin(aHandle);                                                                    \
+    auto plugin = pluginSystem->GetPlugin(module);                                                                     \
     if (!plugin)                                                                                                       \
     {                                                                                                                  \
         return;                                                                                                        \
@@ -26,9 +27,10 @@
     loggerSystem->func(plugin, aMessage)
 
 #define LogF(char_type, count_fn, format_fn, func)                                                                     \
+    const auto module = std::bit_cast<HMODULE>(aHandle);                                                               \
     if (!aFormat)                                                                                                      \
     {                                                                                                                  \
-        spdlog::warn("Plugin with handle {} tried to log a message with a NULL format", fmt::ptr(aHandle));            \
+        spdlog::warn("Plugin with handle {} tried to log a message with a NULL format", fmt::ptr(module));             \
         return;                                                                                                        \
     }                                                                                                                  \
                                                                                                                        \
@@ -39,7 +41,7 @@
     }                                                                                                                  \
                                                                                                                        \
     auto pluginSystem = app->GetPluginSystem();                                                                        \
-    auto plugin = pluginSystem->GetPlugin(aHandle);                                                                    \
+    auto plugin = pluginSystem->GetPlugin(module);                                                                     \
     if (!plugin)                                                                                                       \
     {                                                                                                                  \
         return;                                                                                                        \

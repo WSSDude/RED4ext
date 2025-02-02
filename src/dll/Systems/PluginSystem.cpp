@@ -155,12 +155,12 @@ void PluginSystem::Startup()
 
     // Install CRunningState::OnAfterEnter hook for notifying plugins about entry to Running state.
     RED4ext::v1::GameState stateHook{
-        .OnAfterEnter = [](RED4ext::CGameApplication*){
+        .OnAfterEnter = [](RED4ext::CGameApplication&){
             App::Get()->GetPluginSystem()->EnteredRunningState();
             return true;
         }
     };
-    App::Get()->GetStateSystem()->AddHook(nullptr, RED4ext::EGameStateType::Running, &stateHook);
+    App::Get()->GetStateSystem()->AddHook(nullptr, RED4ext::EGameStateType::Running, stateHook);
 }
 
 void PluginSystem::Shutdown()

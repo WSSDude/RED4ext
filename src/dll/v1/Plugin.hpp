@@ -22,11 +22,12 @@ public:
 private:
     RED4ext::v1::PluginInfo m_info;
 
-    RED4ext::v1::Sdk m_sdk;
     RED4ext::v1::SemVer m_runtime;
     RED4ext::v1::Logger m_logger;
     RED4ext::v1::Hooking m_hooking;
     RED4ext::v1::GameStates m_gameStates;
     RED4ext::v1::Scripts m_scripts;
+    RED4ext::v1::Rendering m_rendering;
+    RED4ext::v1::Sdk m_sdk;
 };
 } // namespace v1

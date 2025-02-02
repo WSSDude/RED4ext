@@ -24,10 +24,8 @@ void StateSystem::Shutdown()
 }
 
 bool StateSystem::AddHook(std::shared_ptr<PluginBase> aPlugin, RED4ext::EGameStateType aStateType,
-                          RED4ext::GameState* aState)
+                          const RED4ext::GameState& aState)
 {
-    assert(aState);
-
     State* state = GetStateByType(aStateType);
     if (!state)
     {
@@ -35,34 +33,34 @@ bool StateSystem::AddHook(std::shared_ptr<PluginBase> aPlugin, RED4ext::EGameSta
         return false;
     }
 
-    if (aState->OnBeforeEnter)
+    if (aState.OnBeforeEnter)
     {
-        state->onEnter.onBefore.emplace_back(aPlugin, aState->OnBeforeEnter);
+        state->onEnter.onBefore.emplace_back(aPlugin, aState.OnBeforeEnter);
     }
 
-    if (aState->OnAfterEnter)
+    if (aState.OnAfterEnter)
     {
-        state->onEnter.onAfter.emplace_back(aPlugin, aState->OnAfterEnter);
+        state->onEnter.onAfter.emplace_back(aPlugin, aState.OnAfterEnter);
     }
 
-    if (aState->OnBeforeTick)
+    if (aState.OnBeforeTick)
     {
-        state->onTick.onBefore.emplace_back(aPlugin, aState->OnBeforeTick);
+        state->onTick.onBefore.emplace_back(aPlugin, aState.OnBeforeTick);
     }
 
-    if (aState->OnAfterTick)
+    if (aState.OnAfterTick)
     {
-        state->onTick.onAfter.emplace_back(aPlugin, aState->OnAfterTick);
+        state->onTick.onAfter.emplace_back(aPlugin, aState.OnAfterTick);
     }
 
-    if (aState->OnBeforeExit)
+    if (aState.OnBeforeExit)
     {
-        state->onExit.onBefore.emplace_back(aPlugin, aState->OnBeforeExit);
+        state->onExit.onBefore.emplace_back(aPlugin, aState.OnBeforeExit);
     }
 
-    if (aState->OnAfterExit)
+    if (aState.OnAfterExit)
     {
-        state->onExit.onAfter.emplace_back(aPlugin, aState->OnAfterExit);
+        state->onExit.onAfter.emplace_back(aPlugin, aState.OnAfterExit);
     }
 
     spdlog::trace(L"The request to add a '{}' state hook for '{}' has been successfully completed", state->GetName(),
@@ -158,7 +156,7 @@ std::pair<StateSystem::State*, StateSystem::StateAction*> StateSystem::GetStateA
     return {nullptr, nullptr};
 }
 
-void StateSystem::Run(std::wstring_view aAction, std::vector<StateItem>& aList, RED4ext::CGameApplication* aApp)
+void StateSystem::Run(std::wstring_view aAction, std::vector<StateItem>& aList, RED4ext::CGameApplication& aApp)
 {
     for (auto it = aList.begin(); it != aList.end();)
     {

@@ -12,6 +12,7 @@
 #include "Hooks/InitScripts.hpp"
 #include "Hooks/LoadScripts.hpp"
 #include "Hooks/Main_Hooks.hpp"
+#include "Hooks/Render.hpp"
 #include "Hooks/ValidateScripts.hpp"
 #include "Hooks/gsmState_SessionActive.hpp"
 
@@ -36,6 +37,7 @@ App::App()
     AddSystem<ScriptCompilationSystem>(m_paths);
     AddSystem<HookingSystem>();
     AddSystem<StateSystem>();
+    AddSystem<RenderSystem>();
     AddSystem<PluginSystem>(m_config.GetPlugins(), m_paths);
 
     m_systems.shrink_to_fit();
@@ -126,7 +128,7 @@ void App::Destruct()
         auto success = Hooks::CGameApplication::Detach() && Hooks::Main::Detach() && Hooks::ExecuteProcess::Detach() &&
                        Hooks::InitScripts::Detach() && Hooks::LoadScripts::Detach() &&
                        Hooks::ValidateScripts::Detach() && Hooks::AssertionFailed::Detach() &&
-                       Hooks::gsmState_SessionActive::Detach();
+                       Hooks::gsmState_SessionActive::Detach() && Hooks::Render::Detach();
         if (success)
         {
             transaction.Commit();
@@ -206,6 +208,12 @@ ScriptCompilationSystem* App::GetScriptCompilationSystem()
     return static_cast<ScriptCompilationSystem*>(system.get());
 }
 
+RenderSystem* App::GetRenderSystem()
+{
+    auto& system = m_systems.at(static_cast<size_t>(ESystemType::Render));
+    return static_cast<RenderSystem*>(system.get());
+}
+
 const Paths* App::GetPaths() const
 {
     return &m_paths;
@@ -224,7 +232,7 @@ bool App::AttachHooks() const
     auto success = Hooks::Main::Attach() && Hooks::CGameApplication::Attach() && Hooks::ExecuteProcess::Attach() &&
                    Hooks::InitScripts::Attach() && Hooks::LoadScripts::Attach() && Hooks::ValidateScripts::Attach() &&
                    Hooks::AssertionFailed::Attach() && Hooks::CollectSaveableSystems::Attach() &&
-                   Hooks::gsmState_SessionActive::Attach();
+                   Hooks::gsmState_SessionActive::Attach() && Hooks::Render::Attach();
     if (success)
     {
         return transaction.Commit();

@@ -20,13 +20,13 @@ public:
     void Startup() final;
     void Shutdown() final;
 
-    bool AddHook(std::shared_ptr<PluginBase> aPlugin, RED4ext::EGameStateType aStateType, RED4ext::GameState* aState);
+    bool AddHook(std::shared_ptr<PluginBase> aPlugin, RED4ext::EGameStateType aStateType, const RED4ext::GameState& aState);
 
     template<std::derived_from<RED4ext::IGameState> T>
     bool Wrap(GameStateHook<T>& aHooked, StateSystemAction aAction, T* aThis, RED4ext::CGameApplication* aApp);
 
 private:
-    using Func_t = bool (*)(RED4ext::CGameApplication*);
+    using Func_t = bool (*)(RED4ext::CGameApplication&);
 
     struct StateItem
     {
@@ -64,7 +64,7 @@ private:
     State* GetStateByType(RED4ext::EGameStateType aType);
     std::pair<State*, StateAction*> GetStateAndActionByTypes(RED4ext::EGameStateType aType, StateSystemAction aAction);
 
-    void Run(std::wstring_view aAction, std::vector<StateItem>& aList, RED4ext::CGameApplication* aApp);
+    void Run(std::wstring_view aAction, std::vector<StateItem>& aList, RED4ext::CGameApplication& aApp);
 
     State m_baseInitialization = {.name = L"BaseInitialization"};
     State m_initialization = {.name = L"Initialization"};
@@ -80,9 +80,9 @@ inline bool StateSystem::Wrap(GameStateHook<T>& aHooked, const StateSystemAction
     if (!state || !action)
         return ExecuteHookedAction(aHooked, aAction, aThis, aApp);
 
-    Run(fmt::format(L"{}::OnBefore{}", state->GetName(), action->GetName()), action->onBefore, aApp);
+    Run(fmt::format(L"{}::OnBefore{}", state->GetName(), action->GetName()), action->onBefore, *aApp);
     const auto result = ExecuteHookedAction(aHooked, aAction, aThis, aApp);
-    Run(fmt::format(L"{}::OnAfter{}", state->GetName(), action->GetName()), action->onAfter, aApp);
+    Run(fmt::format(L"{}::OnAfter{}", state->GetName(), action->GetName()), action->onAfter, *aApp);
 
     return result;
 }
